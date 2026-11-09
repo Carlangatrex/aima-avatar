@@ -1,0 +1,40 @@
+# ============================================================
+# AIMA Avatar - .gitignore
+# Sube solo los archivos fuente de AIMA.
+# NO subas modelos, binarios, claves ni dependencias pesadas.
+# ============================================================
+
+# Modelo de lenguaje local (pesado, varios GB)
+model/*.gguf
+*.gguf
+
+# Binarios y build locales
+build/
+*.exe
+*.dll
+
+# Carpeta upstream de llama.cpp (no es parte de AIMA; descárgala/compílala aparte)
+llama.cpp/
+
+# Logs y temporales
+*.log
+*.tmp
+temp/
+*.cache
+
+# Claves y secretos (¡nunca subir!)
+.env
+.env.local
+*.key
+secrets.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
