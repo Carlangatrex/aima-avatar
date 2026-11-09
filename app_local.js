@@ -1156,6 +1156,13 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
     });
     // --- Theme Toggle ---
     const themeToggle = document.getElementById('theme-toggle');
+    
+    function updateThemeIcon() {
+        const current = document.documentElement.className;
+        // Show the icon of the theme that will be activated on next click
+        themeToggle.textContent = current === 'dark' ? '☀️' : '🌙';
+    }
+    
     // Apply saved theme or default dark
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
@@ -1163,11 +1170,14 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
     } else {
         document.documentElement.className = 'dark';
     }
+    updateThemeIcon();
+    
     themeToggle.addEventListener('click', () => {
         const current = document.documentElement.className;
         const newTheme = current === 'dark' ? 'light' : 'dark';
         document.documentElement.className = newTheme;
         localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
     });
 
 }); // end of DOMContentLoaded
