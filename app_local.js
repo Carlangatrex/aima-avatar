@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openaiKeyInput = document.getElementById('openai-key-input');
     const startBtn = document.getElementById('start-btn');
     const micBtn = document.getElementById('mic-btn');
-    const statusText = document.getElementById('status-text');
+    const statusText = document.getElementById('status-card-text');
     const userText = document.getElementById('user-text');
     const aimaText = document.getElementById('aima-text');
     const fileBtn = document.getElementById('file-btn');
@@ -962,7 +962,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         document.getElementById('start-btn').textContent = t.startBtn;
         document.getElementById('mic-btn').title = t.micBtnTitle;
         document.getElementById('file-btn').title = t.fileBtnTitle;
-        document.getElementById('status-text').textContent = t.statusPresiona;
+        statusText.textContent = t.statusPresiona;
         document.getElementById('export-btn').title = t.exportTitle;
         document.getElementById('clear-btn').title = t.clearTitle;
         document.getElementById('copy-btn').textContent = t.copyLabel;
