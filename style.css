@@ -323,40 +323,6 @@ canvas.border-thinking { border-color: var(--accent-warning); box-shadow: 0 0 30
     opacity: 0.8;
 }
 
-/* Big status card (Troko-inspired: big, readable at a glance) */
-.status-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.4rem;
-    border-radius: 20px;
-    margin-top: 1rem;
-    font-size: 1rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    width: 100%;
-    max-width: 340px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    transition: all 0.3s ease;
-    opacity: 0.97;
-    border: 1px solid var(--glass-border);
-    backdrop-filter: blur(10px);
-    background: var(--glass-bg);
-}
-
-.status-card-idle { background: linear-gradient(135deg, #334155, #475569); color: #f8fafc; border: 1px solid #475569; }
-.status-card-listening { background: linear-gradient(135deg, #ef4444, #f87171); color: #ffffff; border: 1px solid #f87171; box-shadow: 0 0 25px rgba(239,68,68,0.45); animation: pulse 2s infinite; }
-.status-card-thinking { background: linear-gradient(135deg, #f59e0b, #fb923c); color: #ffffff; border: 1px solid #fb923c; box-shadow: 0 0 25px rgba(245,158,11,0.45); animation: pulse-thinking 2s infinite; }
-.status-card-talking { background: linear-gradient(135deg, #10b981, #34d399); color: #ffffff; border: 1px solid #34d399; box-shadow: 0 0 25px rgba(16,185,129,0.45); }
-.status-card-success { background: linear-gradient(135deg, #10b981, #34d399); color: #ffffff; border: 1px solid #34d399; }
-.status-card-error { background: linear-gradient(135deg, #ef4444, #f87171); color: #ffffff; border: 1px solid #f87171; }
-.status-card-confused { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #ffffff; border: 1px solid #fbbf24; }
-.status-card-celebrating { background: linear-gradient(135deg, #d946ef, #f0abfc); color: #ffffff; border: 1px solid #f0abfc; box-shadow: 0 0 30px rgba(217,70,239,0.55); animation: pulse 1.5s infinite; }
-
-.status-card span:first-child {
-    font-size: 1.6rem;
-}
 
 /* Layout de dos columnas: avatar a la izquierda, panel de contenido a la derecha */
 #avatar-screen.active {
