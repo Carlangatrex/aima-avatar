@@ -64,6 +64,12 @@
                         <option value="es" selected>Español</option>
                         <option value="en">English</option>
                     </select>
+                    <select id="tone-select" title="Tono de AIMA" style="background:#1e293b; color:#f8fafc; border:none; padding:0.5rem; border-radius:4px; margin-left:0.4rem;">
+                        <option value="profesional" selected>🎩 Profesional</option>
+                        <option value="cercano">🤝 Cercano</option>
+                        <option value="entusiasta">🔥 Entusiasta</option>
+                        <option value="divertido">😄 Divertido</option>
+                    </select>
                     <button id="presentation-btn" class="idle" title="Modo Presentación" style="background:none; border:none; color:var(--primary); font-size:1.2rem; cursor:pointer;">
                         🎞️
                     </button>
@@ -80,6 +86,15 @@
                 </div>
 
                 <div id="status-text">Presiona para hablar</div>
+                
+                <!-- Big status card -->
+                <div id="status-card" class="status-card idle">
+                    <span id="status-card-icon">🎙️</span>
+                    <span id="status-card-text">Presiona para hablar</span>
+                </div>
+                
+                <!-- Timer display (hidden by default) -->
+                <div id="timer-display" style="display:none; margin-top:0.4rem; font-size:0.85rem; color:var(--primary); font-weight:600;"></div>
                 
                 <div id="text-input-container" style="display: flex; gap: 0.5rem; margin-top: 0.6rem; width: 100%; max-width: 360px; margin-left: auto; margin-right: auto;">
                     <input type="text" id="text-input" placeholder="O escribe tu mensaje aquí..." style="flex: 1; padding: 0.6rem; border-radius: 20px; border: 1px solid #334155; background: #0f172a; color: white;">

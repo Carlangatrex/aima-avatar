@@ -267,6 +267,38 @@ canvas {
     opacity: 0.8;
 }
 
+/* Big status card (Troko-inspired: big, readable at a glance) */
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.2rem;
+    border-radius: 16px;
+    margin-top: 0.8rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
+    max-width: 340px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.3s;
+    opacity: 0.95;
+}
+
+.status-card-idle { background: #334155; color: #f8fafc; border: 1px solid #475569; }
+.status-card-listening { background: #ef4444; color: #ffffff; border: 1px solid #f87171; box-shadow: 0 0 20px rgba(239,68,68,0.4); animation: pulse 2s infinite; }
+.status-card-thinking { background: #f59e0b; color: #ffffff; border: 1px solid #fb923c; box-shadow: 0 0 20px rgba(245,158,11,0.4); animation: pulse-thinking 2s infinite; }
+.status-card-talking { background: #10b981; color: #ffffff; border: 1px solid #34d399; box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+.status-card-success { background: #10b981; color: #ffffff; border: 1px solid #34d399; }
+.status-card-error { background: #ef4444; color: #ffffff; border: 1px solid #f87171; }
+.status-card-confused { background: #f59e0b; color: #ffffff; border: 1px solid #fb923c; }
+.status-card-celebrating { background: #d946ef; color: #ffffff; border: 1px solid #f0abfc; box-shadow: 0 0 25px rgba(217,70,239,0.5); animation: pulse 1.5s infinite; }
+
+.status-card span:first-child {
+    font-size: 1.5rem;
+}
+
 /* Layout de dos columnas: avatar a la izquierda, panel de contenido a la derecha */
 #avatar-screen.active {
     flex-direction: row;

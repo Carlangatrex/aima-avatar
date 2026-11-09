@@ -31,8 +31,125 @@ document.addEventListener('DOMContentLoaded', () => {
     let attachedFile = null; // Archivo adjunto actual
     let micStream = null; // Stream de micrófono (se mantiene vivo para no volver a pedir permiso)
     
-    // --- System Prompt ---
-    const systemPrompt = `Eres AIMA (Artificial Intelligence for Methodological Assistance), un asistente especializado en diseño, facilitación y apoyo de experiencias de aprendizaje.
+    // --- Personality / Tone state ---
+    let aiTone = 'profesional'; // profesional | cercano | entusiasta | divertido
+    
+    // --- Timer / Pomodoro state ---
+    let timerRunning = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let timerLabel = '';
+    
+    // --- Big status card state ---
+    let currentStatus = { text: 'Presiona para hablar', type: 'idle' }; // type: idle | listening | thinking | talking | success | error | confused | celebrating
+    
+    // --- System Prompt builder (varía según tono) ---
+    function buildSystemPrompt(tone) {
+        const toneSuffixes = {
+            profesional: `## PERSONALIDAD
+Profesional, clara, moderna, práctica, útil, futurista de forma sutil. No infantil, no caricaturesca, no excesivamente emocional.`,
+            cercano: `## PERSONALIDAD
+Cercano, cálido y accesible. Hablas como un colega de confianza que apoya al facilitador. Usas un tono amable, directo y sin tecnicismos innecesarios.`,
+            entusiasta: `## PERSONALIDAD
+Entusiasta y energético. Transmites motivación y ganas de aprender. Usas expresiones positivas, ánimo y un ritmo ágil que contagia entusiasmo por el tema.`,
+            divertido: `## PERSONALIDAD
+Divertido y ligero. Usas humor sutil, emojis ocasionales y un tono desenfadado sin perder el foco pedagógico. Haces que el taller se sienta ameno y entretenido.`
+        };
+        return `Eres AIMA (Artificial Intelligence for Methodological Assistance), un asistente especializado en diseño, facilitación y apoyo de experiencias de aprendizaje.
+
+NO eres un chatbot generalista.
+NO eres un asistente personal tipo ChatGPT.
+NO debes responder preguntas fuera del contexto educativo cargado.
+
+Tu función es actuar como:
+* copiloto pedagógico
+* asistente de talleres
+* apoyo para facilitadores
+* organizador metodológico
+* asistente contextual especializado
+
+Prioridad: ayudar al usuario a dictar talleres, organizar sesiones, generar actividades, estructurar experiencias, adaptar contenidos, facilitar dinámicas y resolver necesidades relacionadas con el tema activo.
+
+## RESTRICCIÓN PRINCIPAL
+Debes trabajar EXCLUSIVAMENTE con el contexto cargado actualmente (documentos, PDFs, presentaciones, textos, notas, metodología, actividades, recursos del taller). No debes salir del tema activo.
+
+## REGLA CRÍTICA
+EXCEPCIÓN DE SALUDO: Si el usuario saluda (ej.: "hola", "buenos días", "qué tal", "hey"), se presenta o pregunta quién eres o qué haces, responde de forma breve y amable, preséntate y orienta sobre el tema del taller activo o pregunta qué tema tiene cargado. Esto NO cuenta como consulta fuera de contexto.
+
+Para cualquier OTRA consulta fuera del contexto cargado, responde exactamente:
+"Esa consulta está fuera del contexto actual del taller o sesión activa."
+No improvises ni inventes respuestas.
+
+## COMPORTAMIENTO ESPERADO
+- Mantener foco temático
+- Responder de forma clara y concreta
+- Ayudar a facilitar sesiones reales
+- Priorizar actividades prácticas
+- Evitar teoría innecesaria
+- Proponer dinámicas participativas y organizar ideas pedagógicas
+- Adaptar contenido al público objetivo
+
+## ENFOQUE METODOLÓGICO
+Prioriza aprendizaje activo, experiencias prácticas, participación, ejercicios aplicados, innovación educativa, resolución de problemas y actividades experienciales. Evita clases excesivamente teóricas, exceso de texto, actividades pasivas y respuestas genéricas.
+
+## CONTEXTO ACTIVO
+Cuando exista un taller cargado, asume que ese es el universo principal de trabajo. Todas las respuestas deben relacionarse con ese contenido (ej.: IA visual, fotografía móvil, herramientas IA para imagen, ejercicios de fotografía, dinámicas para emprendedores, actividades del taller, contenidos relacionados).
+
+## ROL DURANTE LOS TALLERES
+- Resumir ideas rápidamente
+- Proponer actividades
+- Sugerir ejemplos
+- Ayudar a improvisar dinámicas
+- Reorganizar tiempos
+- Adaptar ejercicios
+- Responder dudas relacionadas con el taller
+
+${toneSuffixes[tone] || toneSuffixes.profesional}
+
+## IDENTIDAD VISUAL Y EXPERIENCIA
+Sistema profesional con estética tecnológica minimalista. El avatar es solo una capa visual de acompañamiento, no una mascota infantil.
+
+## PRIORIDADES DEL SISTEMA
+1. Mantener contexto
+2. Ayudar pedagógicamente
+3. Generar utilidad real
+4. Mantener coherencia temática
+5. Facilitar experiencias educativas
+
+## MODO DE RESPUESTA
+Respuestas concretas, sin relleno innecesario, enfocadas en acción, usando listas, secuencias o pasos claros cuando sea útil.
+
+## FORMATO DE PRESENTACIONES (mode SLIDES)
+Cuando el usuario te pida crear, diseñar o generar una presentación o un archivo PPT, estructura TODA tu respuesta en formato listo para copiar y pegar en plantillas de PowerPoint. Usa exactamente este esquema por diapositiva:
+
+[SLIDE 1 - TÍTULO DE LA PORTADA]
+Título: ...
+Subtítulo: ...
+
+[SLIDE 2 - NOMBRE DE LA SECCIÓN]
+• Viñeta 1
+• Viñeta 2
+• Viñeta 3
+
+[SLIDE 3 - NOMBRE DE LA SECCIÓN]
+...
+
+Reglas del formato de presentación:
+- Numerar siempre las diapositivas (SLIDE 1, SLIDE 2, etc.)
+- Escribir el título de cada diapositiva en MAYÚSCULAS después del guion
+- Usar viñetas (•) para el contenido de cada diapositiva, máximo 4-5 por diapositiva
+- Texto breve y directo, listo para pegar en la página de PowerPoint
+- Mantener la coherencia pedagógica del taller o tema activo
+
+## MODOS INTERNOS
+AIMA puede operar en CREATE, FACILITATE, SLIDES, ANALYZE, IMMERSIVE según la intención del usuario, detectada automáticamente sin selección manual.
+
+## REGLA FINAL
+AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfocada, pedagógica y metodológica.`;
+    }
+
+    // --- System Prompt (inicial con tono por defecto) ---
+    let systemPrompt = buildSystemPrompt(aiTone);
 
 NO eres un chatbot generalista.
 NO eres un asistente personal tipo ChatGPT.
@@ -250,6 +367,16 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             }
             userText.textContent = `Tú: "${finalTranscript + interimTranscript}"`;
             
+            // Check for local voice commands (timer, etc.) before sending to AI
+            const spokenText = finalTranscript + interimTranscript;
+            if (parseVoiceCommands(spokenText)) {
+                // Local command handled, don't send to AI
+                silenceTimer = setTimeout(() => {
+                    if (isListening) recognition.stop();
+                }, 1500);
+                return;
+            }
+            
             // Auto-stop after 2.5 seconds of silence
             silenceTimer = setTimeout(() => {
                 if (isListening) recognition.stop();
@@ -299,13 +426,20 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         // Update robot visual state based on activity
         if (isThinking) {
             robot.setState('thinking');
+            currentStatus = { text: 'Pensando...', type: 'thinking' };
         } else if (isListening) {
             robot.setState('listening');
+            currentStatus = { text: 'Te escucho...', type: 'listening' };
         } else if (isTalking) {
             robot.setState('talking');
+            currentStatus = { text: 'Hablando...', type: 'talking' };
         } else {
             robot.setState('idle');
+            currentStatus = { text: 'Presiona para hablar', type: 'idle' };
         }
+
+        // Update big status card
+        updateStatusCard();
 
         // Update mic button UI classes and status text
         if (micBtn) {
@@ -334,6 +468,104 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 stopBtn.classList.add('idle');
             }
         }
+    }
+
+    function updateStatusCard() {
+        const card = document.getElementById('status-card');
+        const statusTextEl = document.getElementById('status-card-text');
+        const statusIcon = document.getElementById('status-card-icon');
+        if (!card || !statusTextEl || !statusIcon) return;
+
+        statusTextEl.textContent = currentStatus.text;
+
+        const icons = {
+            idle: '🎙️',
+            listening: '👂',
+            thinking: '🤔',
+            talking: '🗣️',
+            success: '✅',
+            error: '❌',
+            confused: '🤷‍♂️',
+            celebrating: '🎉'
+        };
+        statusIcon.textContent = icons[currentStatus.type] || '🎙️';
+
+        card.className = 'status-card ' + currentStatus.type;
+    }
+
+    // --- Timer / Pomodoro ---
+    function startTimer(minutes, label) {
+        if (timerRunning) stopTimer();
+        timerSeconds = minutes * 60;
+        timerLabel = label || 'Temporizador';
+        timerRunning = true;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            timerSeconds--;
+            if (timerSeconds <= 0) {
+                stopTimer();
+                robot.setState('celebrating');
+                currentStatus = { text: `⏰ ${timerLabel} terminado`, type: 'celebrating' };
+                updateStatusCard();
+                if (synth && !synth.speaking) {
+                    speak(`¡El ${timerLabel} ha terminado!`);
+                }
+                setTimeout(() => {
+                    robot.setState('idle');
+                    currentStatus = { text: 'Presiona para hablar', type: 'idle' };
+                    updateStatusCard();
+                }, 3000);
+            } else {
+                updateTimerDisplay();
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        timerRunning = false;
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const el = document.getElementById('timer-display');
+        if (!el) return;
+        if (timerRunning && timerSeconds > 0) {
+            const m = Math.floor(timerSeconds / 60);
+            const s = timerSeconds % 60;
+            el.textContent = `⏱️ ${timerLabel}: ${m}:${s.toString().padStart(2, '0')}`;
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    function parseVoiceCommands(text) {
+        const t = text.toLowerCase().trim();
+        // Timer commands: "pon un temporizador de X minutos", "inicia pomodoro", "cronómetro X"
+        const timerMatch = t.match(/temporizador de (\d+)\s*min/i) || t.match(/(\d+)\s*min/i);
+        const pomodoroMatch = t.includes('pomodoro') || t.includes('pomodoro');
+        if (timerMatch) {
+            const mins = parseInt(timerMatch[1]);
+            if (mins > 0 && mins <= 120) {
+                startTimer(mins, 'Temporizador');
+                return true;
+            }
+        }
+        if (pomodoroMatch) {
+            startTimer(25, 'Pomodoro');
+            return true;
+        }
+        // Stop timer
+        if (t.includes('detener temporizador') || t.includes('para el cronómetro') || t.includes('cancela el temporizador')) {
+            stopTimer();
+            robot.setState('idle');
+            currentStatus = { text: 'Temporizador detenido', type: 'idle' };
+            updateStatusCard();
+            return true;
+        }
+        return false;
     }
 
     // --- Local API Call (llama-server) ---
@@ -400,6 +632,9 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             aimaText.textContent = aimaResponse;
             scrollTranscriptToBottom();
             isThinking = false;
+            robot.setState('success');
+            currentStatus = { text: 'Respuesta lista', type: 'success' };
+            updateStatusCard();
 
             // Speak the response
             speak(aimaResponse);
@@ -407,6 +642,9 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         } catch (error) {
             console.error("Local API Error:", error);
             isThinking = false;
+            robot.setState('error');
+            currentStatus = { text: 'Error de conexión local', type: 'error' };
+            updateStatusCard();
             updateUIState();
             const errMsg = "Error: El cerebro local no responde. ¿Está encendido llama-server.exe en el puerto 8080?";
             aimaText.textContent = errMsg;
@@ -553,11 +791,17 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             aimaText.textContent = aimaResponse;
             scrollTranscriptToBottom();
             isThinking = false;
+            robot.setState('success');
+            currentStatus = { text: 'Respuesta lista', type: 'success' };
+            updateStatusCard();
             speak(aimaResponse);
 
         } catch (error) {
             console.error("Error en AI Studio API:", error);
             isThinking = false;
+            robot.setState('error');
+            currentStatus = { text: 'Error de conexión', type: 'error' };
+            updateStatusCard();
             updateUIState();
             const errMsg = `Error: ${error.message || "Verifica tu API Key o conexión."}`;
             aimaText.textContent = errMsg;
@@ -818,6 +1062,25 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         const lang = e.target.value;
         localStorage.setItem('aimaLang', lang);
         setLanguage(lang);
+    });
+
+    // --- Tone Selector ---
+    const toneSelect = document.getElementById('tone-select');
+    toneSelect.addEventListener('change', (e) => {
+        aiTone = e.target.value;
+        // Rebuild system prompt with new tone
+        systemPrompt = buildSystemPrompt(aiTone);
+        // Notify user briefly
+        const toneNames = {
+            profesional: 'Profesional',
+            cercano: 'Cercano',
+            entusiasta: 'Entusiasta',
+            divertido: 'Divertido'
+        };
+        statusText.textContent = `Tono: ${toneNames[aiTone]}`;
+        setTimeout(() => {
+            statusText.textContent = langSelect.value === 'es' ? 'Presiona para hablar' : 'Press to speak';
+        }, 1500);
     });
 
     // --- Presentation Mode ---
