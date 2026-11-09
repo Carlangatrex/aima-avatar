@@ -550,92 +550,6 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         }
         return false;
     }
-
-    // --- Local API Call (llama-server) ---
-    async function callLocalAPI(promptText) {
-
-        isThinking = true;
-        robot.setState('idle');
-        updateUIState();
-        currentAimaCard = createMessageCard('aima', "...");
-
-        try {
-            // Build messages for local llama-server
-            const messages = [{ role: "system", content: systemPrompt }];
-            chatHistory.forEach(msg => {
-                messages.push({
-                    role: msg.role === "model" ? "assistant" : "user",
-                    content: msg.parts ? msg.parts[0].text : msg.content
-                });
-            });
-
-            // Add current prompt with file context if available
-            let fullPromptText = promptText;
-            if (attachedFile && attachedFile.content) {
-                fullPromptText = `[DOCUMENTO ADJUNTO: "${attachedFile.name}"]:\n${attachedFile.content}\n\n[PREGUNTA/INSTRUCCIÓN]:\n${promptText}`;
-            } else if (attachedFile) {
-                fullPromptText = `[ARCHIVO ADJUNTO: ${attachedFile.name}]\n\n[PREGUNTA/INSTRUCCIÓN]:\n${promptText}`;
-            }
-            messages.push({ role: "user", content: fullPromptText });
-
-            console.log(`Enviando al Cerebro Local (http://localhost:8080)...`);
-
-            const response = await fetch(`http://localhost:8080/v1/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    messages: messages,
-                    temperature: 0.7,
-                    max_tokens: 800
-                })
-            });
-
-            const data = await response.json();
-            console.log("Respuesta del servidor local:", data);
-
-            if (data.error) {
-                throw new Error(data.error.message);
-            }
-
-            let aimaResponse = data.choices[0].message.content;
-
-            // Limpiar asteriscos y markdown para que la voz no los lea
-            aimaResponse = aimaResponse.replace(/[*#_`~]/g, '').trim();
-
-            // Update history
-            chatHistory.push({ role: "user", content: promptText });
-            chatHistory.push({ role: "model", content: aimaResponse });
-            if (chatHistory.length > 20) {
-                chatHistory = chatHistory.slice(chatHistory.length - 20);
-            }
-            localStorage.setItem('aimaChatHistory', JSON.stringify(chatHistory));
-
-            currentAimaCard = createMessageCard('aima', aimaResponse);
-            scrollTranscriptToBottom();
-            isThinking = false;
-            robot.setState('success');
-            currentStatus = { text: 'Respuesta lista', type: 'success' };
-            updateStatusCard();
-
-            // Speak the response
-            speak(aimaResponse);
-
-        } catch (error) {
-            console.error("Local API Error:", error);
-            isThinking = false;
-            robot.setState('error');
-            currentStatus = { text: 'Error de conexión local', type: 'error' };
-            updateStatusCard();
-            updateUIState();
-            const errMsg = "Error: El cerebro local no responde. ¿Está encendido llama-server.exe en el puerto 8080?";
-            currentAimaCard = createMessageCard('aima', errMsg);
-            speak("Error de conexión con mi cerebro local.");
-        }
-    }
-
-    // --- Google AI Studio API Fallback ---
     async function callGeminiAPI(promptText) {
 
         // 1. Obtener la API Key desde la pantalla o localStorage
@@ -781,6 +695,19 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
 
         } catch (error) {
             console.error("Error en AI Studio API:", error);
+            // Fallback a Groq
+            try {
+                const groqKey = openaiKeyInput.value.trim() || openaiKey || localStorage.getItem('aima_groq_key');
+                if (!groqKey) {
+                    throw new Error("No hay API Key de Groq configurada.");
+                }
+                openaiKey = groqKey;
+                localStorage.setItem('aima_groq_key', groqKey);
+                await callOpenAIAPI(promptText);
+                return;
+            } catch (groqError) {
+                console.error("Error en Groq:", groqError);
+            }
             isThinking = false;
             robot.setState('error');
             currentStatus = { text: 'Error de conexión', type: 'error' };
@@ -788,7 +715,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             updateUIState();
             const errMsg = `Error: ${error.message || "Verifica tu API Key o conexión."}`;
             currentAimaCard = createMessageCard('aima', errMsg);
-            speak("Ocurrió un problema de conexión con Google AI Studio.");
+            speak("Ocurrió un problema de conexión con Google AI Studio y Groq.");
         }
     }
 
