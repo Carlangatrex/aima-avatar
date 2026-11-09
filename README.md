@@ -6,13 +6,25 @@ Asistente pedagógico con avatar (AIMA) para diseñar, facilitar y apoyar experi
 
 ---
 
+## ✨ Mejoras visuales recientes
+
+- **Fondo con degradados animados**: sutiles brillos de colores que cambian según el tema (oscuro/claro).
+- **Efecto neón en el avatar**: el borde del canvas cambia de color y brilla según el estado (escuchando, pensando, hablando, éxito, error).
+- **Botones glassmorphism**: controles con efecto vidrio esmerilado, bordes translúcidos y sombras suaves.
+- **Tarjetas de mensaje**: el panel de contenido muestra mensajes en tarjetas diferenciadas (usuario vs AIMA) con avatares y colores de acento.
+- **Tarjeta de estado grande**: con gradientes animados y iconos grandes, legible a distancia (ideal para proyectar).
+- **Temporizador con barra de progreso**: barra visual que se reduce según el tiempo restante.
+- **Animaciones de entrada**: los mensajes aparecen con efecto fade-in suave.
+
+---
+
 ## ¿Qué incluye?
 
 | Archivo | Función |
 |---------|---------|
 | `index.html` | Interfaz: avatar, controles, panel de contenido, modo presentación, selector de tono, temporizador, tarjeta de estado |
-| `style.css` | Estilos, layout dos columnas, responsive móvil, modo presentación, tarjeta de estado animada |
-| `app_local.js` | Lógica principal: Gemini + llama-server, voz, reconocimiento, comandos de voz, temporizador, tono |
+| `style.css` | Estilos modernos: glassmorphism, degradados, tarjetas, animaciones, responsive móvil, modo presentación |
+| `app_local.js` | Lógica principal: Gemini + llama-server, voz, reconocimiento, comandos de voz, temporizador, tono, tarjetas de mensaje |
 | `robot.js` | Dibujo del avatar en canvas (rostro animado con 8 estados + animaciones de ocio) |
 | `localModel.js` | Integración opcional con modelo local (llama.cpp) |
 | `system_prompt.txt` | Prompt de sistema de AIMA (para uso offline) |
@@ -49,19 +61,14 @@ Cambia el tono desde el desplegable junto al selector de idioma. El cambio se ap
 
 ### ⏱️ Temporizador / Pomodoro por voz
 AIMA entiende comandos de voz para temporizadores:
-- **"Pon un temporizador de 10 minutos"** → inicia cuenta atrás
+- **"Pon un temporizador de 10 minutos"** → inicia cuenta atrás con barra de progreso
 - **"Pomodoro"** → inicia 25 minutos (método Pomodoro clásico)
 - **"Detener temporizador"** → cancela la cuenta atrás
 
-Cuando termina, el avatar celebra y avisa por voz. Se muestra una cuenta atrás grande en pantalla.
+Cuando termina, el avatar celebra y avisa por voz.
 
-### 📋 Tarjeta de estado grande
-Una tarjeta visible en la parte inferior del avatar muestra el estado actual de un vistazo (ideal para proyectar en clase o ver desde lejos).
-
-### 🎙️ Voz sincronizada
-La boca del avatar se abre y cierra al ritmo de las palabras reales que dice la síntesis de voz (usa eventos `onboundary` del navegador), no movimiento aleatorio.
-
-### 📎 Panel de contenido
+### 📋 Tarjetas de contenido
+El panel muestra cada mensaje en una tarjeta con avatar, etiqueta y color de acento:
 - 📋 **Copiar** — copia la última respuesta al portapapeles
 - 📥 **Exportar** — descarga el historial como `.txt`
 - 🗑️ **Borrar** — limpia el historial y empieza conversación nueva
@@ -136,7 +143,7 @@ Al abrir la pantalla de configuración:
 | 📥 Exportar | Descarga el historial como `.txt` |
 | 🗑️ Borrar | Limpia el historial |
 | 🎭 Tono | Cambia la personalidad de AIMA |
-| ⏱️ Voz: "temporizador de X min" | Inicia cuenta atrás |
+| ⏱️ Voz: "temporizador de X min" | Inicia cuenta atrás con barra de progreso |
 | 🍅 Voz: "pomodoro" | Inicia temporizador de 25 min |
 
 **Comandos de voz reconocidos localmente:**
@@ -186,6 +193,7 @@ Todo lo demás se envía a la IA para responder pedagógicamente.
 | El celular no se conecta | Misma WiFi. Usa IP de tu PC, no `localhost`. |
 | El avatar no cambia de tono | Recarga con Ctrl + F5 después de cambiar el tono. |
 | El temporizador no suena al terminar | Asegúrate de que el navegador permita sonido (interactúa primero con la página). |
+| Las tarjetas no aparecen | Recarga con Ctrl + F5 (se actualizaron CSS y JS). |
 
 ---
 

@@ -31,13 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let attachedFile = null; // Archivo adjunto actual
     let micStream = null; // Stream de micrófono (se mantiene vivo para no volver a pedir permiso)
     
+    // --- Message card tracking ---
+    let currentUserCard = null; // Elemento DOM de la tarjeta de usuario en edición (interim)
+    let currentAimaCard = null; // Elemento DOM de la última tarjeta de AIMA
+    
     // --- Personality / Tone state ---
     let aiTone = 'profesional'; // profesional | cercano | entusiasta | divertido
     
     // --- Timer / Pomodoro state ---
     let timerRunning = false;
     let timerSeconds = 0;
-    let timerInterval = null;
+    let timerInitialSeconds = 0;
     let timerLabel = '';
     
     // --- Big status card state ---
@@ -367,6 +371,14 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             }
             userText.textContent = `Tú: "${finalTranscript + interimTranscript}"`;
             
+            // Mostrar tarjeta de usuario en tiempo real
+            const transcriptText = finalTranscript + interimTranscript;
+            if (!currentUserCard || event.results[event.resultIndex].isFinal) {
+                currentUserCard = createMessageCard('user', transcriptText);
+            } else {
+                updateMessageCard(currentUserCard, transcriptText);
+            }
+            
             // Check for local voice commands (timer, etc.) before sending to AI
             const spokenText = finalTranscript + interimTranscript;
             if (parseVoiceCommands(spokenText)) {
@@ -491,12 +503,69 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         statusIcon.textContent = icons[currentStatus.type] || '🎙️';
 
         card.className = 'status-card ' + currentStatus.type;
+        
+        // Cambiar borde del canvas según estado
+        const canvas = document.getElementById('robot-canvas');
+        if (canvas) {
+            canvas.className = '';
+            const borderMap = {
+                idle: '', listening: 'border-listening', thinking: 'border-thinking',
+                talking: 'border-talking', success: 'border-success', error: 'border-error',
+                confused: 'border-thinking', celebrating: 'border-success'
+            };
+            const cls = borderMap[currentStatus.type];
+            if (cls) canvas.classList.add(cls);
+        }
+    }
+
+    // --- Message cards ---
+    function createMessageCard(role, text) {
+        const isUser = role === 'user';
+        const card = document.createElement('div');
+        card.className = `message-card ${isUser ? 'message-user' : 'message-aima'}`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.textContent = isUser ? '👤' : '🤖';
+        
+        const body = document.createElement('div');
+        body.className = 'message-body';
+        
+        const label = document.createElement('div');
+        label.className = 'message-label';
+        label.textContent = isUser ? 'TÚ' : 'AIMA';
+        
+        const textEl = document.createElement('div');
+        textEl.className = 'message-text';
+        textEl.textContent = text;
+        
+        body.appendChild(label);
+        body.appendChild(textEl);
+        card.appendChild(avatar);
+        card.appendChild(body);
+        
+        transcriptContent.appendChild(card);
+        scrollTranscriptToBottom();
+        return card;
+    }
+    
+    function updateMessageCard(card, text) {
+        const textEl = card.querySelector('.message-text');
+        if (textEl) textEl.textContent = text;
+        scrollTranscriptToBottom();
+    }
+
+    function clearMessageCards() {
+        transcriptContent.innerHTML = '';
+        currentUserCard = null;
+        currentAimaCard = null;
     }
 
     // --- Timer / Pomodoro ---
     function startTimer(minutes, label) {
         if (timerRunning) stopTimer();
         timerSeconds = minutes * 60;
+        timerInitialSeconds = minutes * 60;
         timerLabel = label || 'Temporizador';
         timerRunning = true;
         updateTimerDisplay();
@@ -529,15 +598,21 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
     }
 
     function updateTimerDisplay() {
-        const el = document.getElementById('timer-display');
-        if (!el) return;
+        const container = document.getElementById('timer-display');
+        const labelEl = document.getElementById('timer-label');
+        const barEl = document.getElementById('timer-bar');
+        const timeEl = document.getElementById('timer-time');
+        if (!container) return;
         if (timerRunning && timerSeconds > 0) {
             const m = Math.floor(timerSeconds / 60);
             const s = timerSeconds % 60;
-            el.textContent = `⏱️ ${timerLabel}: ${m}:${s.toString().padStart(2, '0')}`;
-            el.style.display = 'block';
+            labelEl.textContent = timerLabel;
+            timeEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            const pct = timerInitialSeconds > 0 ? Math.max(0, (timerSeconds / timerInitialSeconds) * 100) : 100;
+            barEl.style.width = `${pct}%`;
+            container.style.display = 'block';
         } else {
-            el.style.display = 'none';
+            container.style.display = 'none';
         }
     }
 
@@ -574,7 +649,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         isThinking = true;
         robot.setState('idle');
         updateUIState();
-        aimaText.textContent = "...";
+        currentAimaCard = createMessageCard('aima', "...");
 
         try {
             // Build messages for local llama-server
@@ -629,7 +704,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             }
             localStorage.setItem('aimaChatHistory', JSON.stringify(chatHistory));
 
-            aimaText.textContent = aimaResponse;
+            currentAimaCard = createMessageCard('aima', aimaResponse);
             scrollTranscriptToBottom();
             isThinking = false;
             robot.setState('success');
@@ -647,7 +722,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             updateStatusCard();
             updateUIState();
             const errMsg = "Error: El cerebro local no responde. ¿Está encendido llama-server.exe en el puerto 8080?";
-            aimaText.textContent = errMsg;
+            currentAimaCard = createMessageCard('aima', errMsg);
             speak("Error de conexión con mi cerebro local.");
         }
     }
@@ -671,7 +746,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
 
         isThinking = true;
         updateUIState();
-        aimaText.textContent = "...";
+        currentAimaCard = createMessageCard('aima', "...");
 
         try {
             // 2. Preparar el historial de chat para Gemini
@@ -804,7 +879,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             updateStatusCard();
             updateUIState();
             const errMsg = `Error: ${error.message || "Verifica tu API Key o conexión."}`;
-            aimaText.textContent = errMsg;
+            currentAimaCard = createMessageCard('aima', errMsg);
             speak("Ocurrió un problema de conexión con Google AI Studio.");
         }
     }
@@ -865,7 +940,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             console.error("Groq API Error:", error);
             isThinking = false;
             updateUIState();
-            aimaText.textContent = "Ambos servidores fallaron o la llave de Groq es inválida.";
+            currentAimaCard = createMessageCard('aima', "Ambos servidores fallaron o la llave de Groq es inválida.");
         }
     }
 
@@ -927,7 +1002,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         if (isThinking || isTalking) return;
         const text = textInput.value.trim();
         if (text) {
-            userText.textContent = text;
+            currentUserCard = createMessageCard('user', text);
             textInput.value = '';
             callGeminiAPI(text);
         }
@@ -959,7 +1034,15 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
 
     // --- Copy Content Button ---
     copyBtn.addEventListener('click', async () => {
-        const contentToCopy = aimaText.textContent || '';
+        // Copiar el último mensaje de AIMA del historial
+        let contentToCopy = '';
+        for (let i = chatHistory.length - 1; i >= 0; i--) {
+            if (chatHistory[i].role === 'model') {
+                contentToCopy = chatHistory[i].parts ? chatHistory[i].parts[0].text : chatHistory[i].content;
+                break;
+            }
+        }
+        contentToCopy = contentToCopy.replace(/[*#_`~]/g, '').trim();
         if (contentToCopy && contentToCopy !== '...' && contentToCopy !== '') {
             try {
                 await navigator.clipboard.writeText(contentToCopy);
@@ -996,8 +1079,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
     clearBtn.addEventListener('click', () => {
         chatHistory = [];
         localStorage.removeItem('aimaChatHistory');
-        userText.textContent = '';
-        aimaText.textContent = '';
+        clearMessageCards();
         statusText.textContent = langSelect.value === 'es' ? 'Historial borrado' : 'History cleared';
         setTimeout(() => {
             statusText.textContent = langSelect.value === 'es' ? 'Presiona para hablar' : 'Press to speak';
