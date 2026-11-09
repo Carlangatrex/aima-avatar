@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let timerLabel = '';
     
     // --- Big status card state ---
-    let currentStatus = { text: 'Presiona para hablar', type: 'idle' }; // type: idle | listening | thinking | talking | success | error | confused | celebrating
+    let currentStatus = { text: '', type: 'idle' }; // type: idle | listening | thinking | talking | success | error | confused | celebrating
     
     // --- System Prompt builder (varía según tono) ---
     function buildSystemPrompt(tone) {
@@ -327,7 +327,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 if (textToSend) {
                     callGeminiAPI(textToSend);
                 } else {
-                    statusText.textContent = "No escuché nada. Presiona para hablar";
+                    statusText.textContent = "No escuché nada.";
                 }
             }
         };
@@ -355,7 +355,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
             currentStatus = { text: 'Hablando...', type: 'talking' };
         } else {
             robot.setState('idle');
-            currentStatus = { text: 'Presiona para hablar', type: 'idle' };
+            currentStatus = { text: '', type: 'idle' };
         }
 
         // Update big status card
@@ -375,7 +375,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 statusText.textContent = "Hablando...";
             } else {
                 micBtn.classList.add('idle');
-                statusText.textContent = "Presiona para hablar";
+                statusText.textContent = "";
             }
         }
 
@@ -489,7 +489,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 }
                 setTimeout(() => {
                     robot.setState('idle');
-                    currentStatus = { text: 'Presiona para hablar', type: 'idle' };
+                    currentStatus = { text: '', type: 'idle' };
                     updateStatusCard();
                 }, 3000);
             } else {
@@ -788,7 +788,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         // Initialize voice on first user interaction
         loadVoices();
         
-        statusText.textContent = "Presiona para hablar (Modo Offline)";
+        statusText.textContent = "";
     });
     
     // --- Microphone permission (se solicita una vez y se mantiene activa) ---
@@ -917,7 +917,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         clearMessageCards();
         statusText.textContent = langSelect.value === 'es' ? 'Historial borrado' : 'History cleared';
         setTimeout(() => {
-            statusText.textContent = langSelect.value === 'es' ? 'Presiona para hablar' : 'Press to speak';
+            statusText.textContent = "";
         }, 1500);
     });
 
@@ -929,7 +929,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 startBtn: 'Iniciar Avatar',
                 micBtnTitle: 'Hablar',
                 fileBtnTitle: 'Adjuntar Archivo (Word, Excel, PowerPoint, PDF, Imagen)',
-                statusPresiona: 'Presiona para hablar',
+                statusPresiona: "",
                 listening: 'Te escucho...',
                 thinking: 'Pensando...',
                 talking: 'Hablando...',
@@ -945,7 +945,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
                 startBtn: 'Start Avatar',
                 micBtnTitle: 'Speak',
                 fileBtnTitle: 'Attach File (Word, Excel, PowerPoint, PDF, Image)',
-                statusPresiona: 'Press to speak',
+                statusPresiona: "",
                 listening: 'Listening...',
                 thinking: 'Thinking...',
                 talking: 'Talking...',
@@ -996,7 +996,7 @@ AIMA NO debe intentar ser una IA universal. Es contextual, especializada, enfoca
         };
         statusText.textContent = `Tono: ${toneNames[aiTone]}`;
         setTimeout(() => {
-            statusText.textContent = langSelect.value === 'es' ? 'Presiona para hablar' : 'Press to speak';
+            statusText.textContent = "";
         }, 1500);
     });
 
